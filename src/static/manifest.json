@@ -1,0 +1,28 @@
+{
+  "name": "linkedin-buddy",
+  "description": "Simple LinkedIn automation tool, that allow users to set specific taskes, such as visit profiles, send connection request and so",
+  "version": "1.0.0",
+  "manifest_version": 3,
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "LinkedIn Buddy",
+    "default_icon": "icon.png"
+  },
+  "permissions": ["storage", "scripting", "activeTab"],
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/*"],
+      "js": ["contentScript.js"]
+    }
+  ],
+  "host_permissions": ["https://www.linkedin.com/*"]
+}
