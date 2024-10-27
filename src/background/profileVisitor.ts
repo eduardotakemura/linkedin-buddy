@@ -26,16 +26,13 @@ export class ProfileVisitor {
     } else {
       this.state.isVisiting = false
       console.log('Finished visiting all profiles')
+      this.cleanupWorkingTab()
     }
   }
 
   async navigateBack(retries: number = 3): Promise<void> {
     if (this.state.startingTabId === undefined) return
     try {
-      //   const [tab] = await chrome.tabs.query({
-      //     active: true,
-      //     currentWindow: true,
-      //   })
       const tab = await chrome.tabs.get(this.state.startingTabId)
 
       if (tab && tab.id) {
@@ -52,14 +49,6 @@ export class ProfileVisitor {
         await chrome.tabs.goBack()
         await this.delay(10000)
         this.visitNextProfile()
-        // if (tab && tab.id) {
-        //   await chrome.tabs.goBack(tab.id)
-        //   await this.delay(10000)
-        //   this.visitNextProfile()
-        // } else {
-        //   console.error('Fallback also failed. Moving to the next profile.')
-        //   this.visitNextProfile()
-        // }
       }
     } catch (error) {
       console.error('Error in navigateBack:', error)
@@ -73,6 +62,14 @@ export class ProfileVisitor {
         console.error('Failed to navigate back. Ending visit.')
         this.visitNextProfile()
       }
+    }
+  }
+
+  async cleanupWorkingTab(): Promise<void> {
+    if (this.state.startingTabId !== undefined) {
+      await chrome.tabs.remove(this.state.startingTabId)
+      console.log('Closed the working tab as the process finished')
+      this.state.startingTabId = undefined
     }
   }
 

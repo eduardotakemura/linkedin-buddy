@@ -18,17 +18,16 @@ class ProfileVisitorBackground {
   }
 
   initializeListeners() {
-    console.log('Background service worker initialized')
-
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       console.log('Background received message:', message)
 
       try {
         if (message.action === 'startVisiting') {
-          this.startVisitingProcess()
+          this.startVisitingProcess(message.data.seedLink)
         } else if (message.action === 'stopVisiting') {
           console.log('Stopping')
           this.state.isVisiting = false
+          this.profileVisitor.cleanupWorkingTab()
         } else if (message.action === 'getProfileLinks') {
           console.log('Received profile links:', message.data)
           this.state.profileLinks = message.data
@@ -42,21 +41,62 @@ class ProfileVisitorBackground {
     })
 
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-      if (changeInfo.status === 'complete' && this.state.isVisiting) {
+      if (
+        changeInfo.status === 'complete' &&
+        this.state.isVisiting &&
+        tabId === this.state.startingTabId
+      ) {
         this.handlePageLoad(tab.url || '')
       }
     })
   }
 
-  private async startVisitingProcess(): Promise<void> {
+  private async startVisitingProcess(seedLink: string): Promise<void> {
     console.log('Starting visiting process')
     this.state.isVisiting = true
     this.state.currentIndex = 0
 
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
+    const tab = await chrome.tabs.create({
+      url: seedLink,
+      active: true,
+      pinned: true,
+    })
+
     if (tab.id) {
       this.state.startingTabId = tab.id
-      chrome.tabs.sendMessage(tab.id, { action: 'getProfileLinks' })
+      this.state.originalPage = seedLink
+      this.waitForContentScript(tab.id)
+    }
+  }
+
+  private async waitForContentScript(tabId: number) {
+    const maxRetries = 10
+    let attempts = 0
+    const delay = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms))
+
+    while (attempts < maxRetries) {
+      try {
+        // Check if the content script is ready
+        await chrome.tabs.sendMessage(tabId, { action: 'getProfileLinks' })
+        console.log('Content script is ready')
+        break // Exit loop if successful
+      } catch {
+        // Log retries as info rather than errors
+        console.info(
+          `Retrying connection to content script (Attempt ${attempts + 1})`
+        )
+        attempts++
+        await delay(3000) // Wait before retrying
+      }
+    }
+
+    if (attempts === maxRetries) {
+      // Only log as error if all attempts fail
+      console.error(
+        'Failed to connect to content script after multiple attempts.'
+      )
+      await this.profileVisitor.cleanupWorkingTab() // Close the working tab if retries exhausted
     }
   }
 
@@ -93,24 +133,6 @@ class ProfileVisitorBackground {
       this.profileVisitor.visitNextProfile()
     }
   }
-
-  // private async sendConnectionRequestToContent(tabId: number): Promise<void> {
-  //   return new Promise((resolve, reject) => {
-  //     // Set up a one-time response listener for the content script's reply
-  //     const responseHandler = (message: Message) => {
-  //       if (message.action === 'connectRequestComplete') {
-  //         chrome.runtime.onMessage.removeListener(responseHandler) // Remove listener after receiving response
-  //         console.log('Connection request completed')
-  //         resolve()
-  //       }
-  //     }
-  //     chrome.runtime.onMessage.addListener(responseHandler)
-
-  //     // Send the connect request message to content script
-  //     chrome.tabs.sendMessage(tabId, { action: 'sendConnectRequest' })
-  //     console.log('Sent the connection request')
-  //   })
-  // }
 }
 
 // Initialize the background script
