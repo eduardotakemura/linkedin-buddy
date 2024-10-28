@@ -16,6 +16,7 @@ class ProfileVisitorBackground {
   constructor() {
     this.profileVisitor = new ProfileVisitor(this.state)
     this.initializeListeners()
+    chrome.storage.local.set({ task: this.state })
   }
 
   initializeListeners() {
@@ -25,7 +26,6 @@ class ProfileVisitorBackground {
           this.startVisitingProcess(message.data.seedLink)
         } else if (message.action === 'stopVisiting') {
           console.log('Manual Stop Triggered')
-          this.state.isVisiting = false
           this.profileVisitor.cleanupWorkingTab()
         } else if (message.action === 'getProfileLinks') {
           this.state.profileLinks = message.data
@@ -55,7 +55,9 @@ class ProfileVisitorBackground {
     console.log('Starting visiting process')
     this.state.isVisiting = true
     this.state.currentIndex = 0
+    chrome.storage.local.set({ task: this.state })
 
+    // Popup new pinned tab
     const tab = await chrome.tabs.create({
       url: seedLink,
       active: false,
@@ -74,6 +76,7 @@ class ProfileVisitorBackground {
     let attempts = 0
 
     while (attempts < maxRetries) {
+      if (!this.state.isVisiting) break
       // Check if the content is ready
       try {
         await chrome.tabs.sendMessage(tabId, { action: 'getProfileLinks' })

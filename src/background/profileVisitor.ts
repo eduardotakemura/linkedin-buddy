@@ -29,7 +29,6 @@ export class ProfileVisitor {
         await this.visitNextProfile()
       }
     } else {
-      this.state.isVisiting = false
       console.log('Finished Visiting Task.')
       this.cleanupWorkingTab()
     }
@@ -74,6 +73,8 @@ export class ProfileVisitor {
     if (this.state.startingTabId !== undefined) {
       await chrome.tabs.remove(this.state.startingTabId)
       this.state.startingTabId = undefined
+      this.state.isVisiting = false
+      chrome.storage.local.set({ task: this.state })
       console.log('Closing work tab.')
     }
   }
