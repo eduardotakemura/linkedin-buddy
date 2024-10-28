@@ -9,6 +9,7 @@ class ProfileVisitorBackground {
     currentIndex: 0,
     isVisiting: false,
     originalPage: '',
+    isProfileLoaded: true,
   }
   private profileVisitor: ProfileVisitor
 
@@ -19,20 +20,19 @@ class ProfileVisitorBackground {
 
   initializeListeners() {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      console.log('Background received message:', message)
-
       try {
         if (message.action === 'startVisiting') {
           this.startVisitingProcess(message.data.seedLink)
         } else if (message.action === 'stopVisiting') {
-          console.log('Stopping')
+          console.log('Manual Stop Triggered')
           this.state.isVisiting = false
           this.profileVisitor.cleanupWorkingTab()
         } else if (message.action === 'getProfileLinks') {
-          console.log('Received profile links:', message.data)
           this.state.profileLinks = message.data
           this.state.originalPage = sender.tab?.url || ''
           this.profileVisitor.visitNextProfile()
+        } else if (message.action === 'log') {
+          console.log('Content Script Log:', ...message.data)
         }
       } catch (error) {
         console.error('Error processing message:', error)
@@ -58,7 +58,7 @@ class ProfileVisitorBackground {
 
     const tab = await chrome.tabs.create({
       url: seedLink,
-      active: true,
+      active: false,
       pinned: true,
     })
 
@@ -70,33 +70,29 @@ class ProfileVisitorBackground {
   }
 
   private async waitForContentScript(tabId: number) {
-    const maxRetries = 10
+    const maxRetries = 20
     let attempts = 0
-    const delay = (ms: number) =>
-      new Promise((resolve) => setTimeout(resolve, ms))
 
     while (attempts < maxRetries) {
+      // Check if the content is ready
       try {
-        // Check if the content script is ready
         await chrome.tabs.sendMessage(tabId, { action: 'getProfileLinks' })
         console.log('Content script is ready')
-        break // Exit loop if successful
+        break
       } catch {
-        // Log retries as info rather than errors
         console.info(
           `Retrying connection to content script (Attempt ${attempts + 1})`
         )
         attempts++
-        await delay(3000) // Wait before retrying
+        await this.profileVisitor.delay(3)
       }
     }
-
+    // Exit if retries are exhausted
     if (attempts === maxRetries) {
-      // Only log as error if all attempts fail
       console.error(
         'Failed to connect to content script after multiple attempts.'
       )
-      await this.profileVisitor.cleanupWorkingTab() // Close the working tab if retries exhausted
+      await this.profileVisitor.cleanupWorkingTab()
     }
   }
 
@@ -113,23 +109,22 @@ class ProfileVisitorBackground {
       console.log('On profile page, waiting before navigating back')
 
       // Wait for the page to load
-      await this.profileVisitor.delay(10000 + Math.random() * 10000)
+      await this.profileVisitor.delay(5, 30)
 
       // Send connection request
       const connectionRequester = new ConnectionRequester(
         this.state.startingTabId
       )
       await connectionRequester.sendConnectionRequestToContent()
-
-      // Last delay
-      await this.profileVisitor.delay(10000 + Math.random() * 10000)
+      await this.profileVisitor.delay(2, 5)
 
       // Back to previous page
+      this.state.isProfileLoaded = true
       this.state.visitedProfiles.push(url)
       await this.profileVisitor.navigateBack()
     } else if (isOriginalPage) {
       console.log('Back to original page, visiting next profile')
-      await this.profileVisitor.delay(3000 + Math.random() * 2000)
+      await this.profileVisitor.delay(10, 20)
       this.profileVisitor.visitNextProfile()
     }
   }

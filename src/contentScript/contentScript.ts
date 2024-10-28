@@ -16,8 +16,12 @@ class ProfileVisitor {
             data: links,
           })
         } else if (message.action === 'sendConnectRequest') {
-          console.log('sending the conection request!')
           this.sendConnectionRequest()
+            .then(() => sendResponse({ status: 'completed' }))
+            .catch((error) =>
+              sendResponse({ status: 'failed', error: error.toString() })
+            )
+          return true
         }
       }
     )
@@ -36,6 +40,7 @@ class ProfileVisitor {
       })
       .filter((href): href is string => href !== null)
 
+    this.logToBackground('Extracted profile links:', profileLinks)
     return [...new Set(profileLinks)]
   }
 
@@ -48,27 +53,31 @@ class ProfileVisitor {
       connectButton.click()
 
       // Wait for the modal to load
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+      await new Promise((resolve) => setTimeout(resolve, 4000))
 
       // Click the "Send without a note" button in the modal
       const modalButton = document.querySelector(
-        'button[aria-label="Send without a note"]'
+        'button[aria-label*="Send without a note"]'
       ) as HTMLButtonElement
+
       if (modalButton) {
         await new Promise((resolve) =>
-          setTimeout(resolve, 1000 + Math.random() * 10000)
+          setTimeout(resolve, 2000 + Math.random() * 3000)
         )
         modalButton.click()
-        console.log('Pressed the send button on the modal')
+        this.logToBackground('Pressed the send button on the modal')
       } else {
-        console.log('Cannot find the send button on the modal')
+        this.logToBackground('Cannot find the send button on the modal')
       }
     } catch (error) {
-      console.info('Failed to send connection request:', error)
+      this.logToBackground('Failed to send connection request:', error)
     } finally {
-      // Notify background script that the connection request is complete
       chrome.runtime.sendMessage({ action: 'connectRequestComplete' })
     }
+  }
+
+  private logToBackground(...messages: any[]): void {
+    chrome.runtime.sendMessage({ action: 'log', data: messages })
   }
 }
 

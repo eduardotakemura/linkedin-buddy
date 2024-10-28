@@ -5,6 +5,7 @@ export interface ProfileVisitorState {
   isVisiting: boolean
   originalPage: string
   startingTabId?: number
+  isProfileLoaded: boolean
 }
 
 export interface Message {

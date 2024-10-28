@@ -4,6 +4,7 @@ import './popup.css'
 
 const App: React.FC<{}> = () => {
   const [seed, setSeed] = useState<string>('')
+  const [isRunning, setRunning] = useState<boolean>(false)
 
   const handleStartVisiting = () => {
     chrome.runtime.sendMessage({

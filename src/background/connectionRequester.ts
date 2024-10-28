@@ -14,8 +14,14 @@ export class ConnectionRequester {
       }
 
       // Send the connection request message to the content script
-      chrome.tabs.sendMessage(this.tabId, { action: 'sendConnectRequest' })
-      console.log('Connection request message sent to content script')
+      const response = await chrome.tabs.sendMessage(this.tabId, {
+        action: 'sendConnectRequest',
+      })
+      if (response.status === 'completed') {
+        console.log('Connection request completed successfully')
+      } else {
+        console.error('Connection request failed:', response.error)
+      }
     } catch (error) {
       console.error('Failed to send connection request message:', error)
     }
