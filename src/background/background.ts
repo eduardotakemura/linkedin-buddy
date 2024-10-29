@@ -10,6 +10,7 @@ class ProfileVisitorBackground {
     isVisiting: false,
     originalPage: '',
     isProfileLoaded: true,
+    movingToNextPage: false,
   }
   private profileVisitor: ProfileVisitor
 
@@ -28,8 +29,22 @@ class ProfileVisitorBackground {
           console.log('Manual Stop Triggered')
           this.profileVisitor.cleanupWorkingTab()
         } else if (message.action === 'getProfileLinks') {
-          this.state.profileLinks = message.data
+          // this.state.profileLinks = message.data
+          var links = message.data
+          // If next page
+          if (this.state.movingToNextPage) {
+            links = [links[0]]
+            this.state.profileLinks.push(...links)
+            console.log('pushed new links')
+            console.log(sender)
+          } else {
+            // First run
+            this.state.profileLinks = [links[0]]
+            console.log('first run')
+          }
           this.state.originalPage = sender.tab?.url || ''
+          console.log(this.state.profileLinks)
+          console.log(this.state.originalPage)
           this.profileVisitor.visitNextProfile()
         } else if (message.action === 'log') {
           console.log('Content Script Log:', ...message.data)
@@ -71,7 +86,7 @@ class ProfileVisitorBackground {
     }
   }
 
-  private async waitForContentScript(tabId: number) {
+  async waitForContentScript(tabId: number) {
     const maxRetries = 20
     let attempts = 0
 
@@ -104,6 +119,7 @@ class ProfileVisitorBackground {
 
     const isProfile = url.includes('/in/')
     const isOriginalPage = url === this.state.originalPage
+    const isNextPage = this.state.movingToNextPage
 
     const tab = await chrome.tabs.get(this.state.startingTabId)
     if (!tab || tab.url !== url) return
@@ -124,6 +140,7 @@ class ProfileVisitorBackground {
       // Back to previous page
       this.state.isProfileLoaded = true
       this.state.visitedProfiles.push(url)
+      console.log(this.state.visitedProfiles)
       await this.profileVisitor.navigateBack()
     } else if (isOriginalPage) {
       console.log('Back to original page, visiting next profile')

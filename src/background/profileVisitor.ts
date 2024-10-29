@@ -29,8 +29,23 @@ export class ProfileVisitor {
         await this.visitNextProfile()
       }
     } else {
-      console.log('Finished Visiting Task.')
-      this.cleanupWorkingTab()
+      console.log('Trying to get next page')
+      const tab = await chrome.tabs.get(this.state.startingTabId)
+      await chrome.tabs.sendMessage(tab.id!, { action: 'nextPage' })
+      console.log('Moving to next page')
+      await this.delay(5, 5)
+      this.state.movingToNextPage = true
+      this.state.isProfileLoaded = true
+      // check profilelinks
+
+      await chrome.tabs.sendMessage(tab.id!, { action: 'getProfileLinks' })
+      console.log('Sent get links request')
+
+      // append new links to the current array
+      // continue loop from previous index
+
+      // console.log('Finished Visiting Task.')
+      // this.cleanupWorkingTab()
     }
   }
 

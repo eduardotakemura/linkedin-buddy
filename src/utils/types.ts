@@ -6,6 +6,7 @@ export interface ProfileVisitorState {
   originalPage: string
   startingTabId?: number
   isProfileLoaded: boolean
+  movingToNextPage: boolean
 }
 
 export interface Message {
@@ -16,5 +17,6 @@ export interface Message {
     | 'profileVisited'
     | 'sendConnectRequest'
     | 'connectRequestComplete'
+    | 'nextPage'
   data?: any
 }
