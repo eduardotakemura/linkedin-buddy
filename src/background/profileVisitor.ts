@@ -15,37 +15,47 @@ export class ProfileVisitor {
     )
       return
     this.state.isProfileLoaded = false
+    const tab = await chrome.tabs.get(this.state.startingTabId)
+    // Retrieve visited profiles array
+    const visitedProfiles: string[] = await new Promise((resolve) => {
+      chrome.storage.sync.get(['visitedProfiles'], (result) => {
+        resolve(result.visitedProfiles || [])
+      })
+    })
 
+    // If there's still links
     if (this.state.currentIndex < this.state.profileLinks.length) {
       const nextProfile = this.state.profileLinks[this.state.currentIndex]
       this.state.currentIndex++
-
-      const tab = await chrome.tabs.get(this.state.startingTabId)
-      if (tab && tab.id) {
-        console.log('Updating tab to visit next profile')
+      // Skip if already visited this profile
+      if (visitedProfiles.includes(nextProfile)) {
+        console.log(
+          `Profile ${nextProfile} has already been visited. Skipping.`
+        )
+        this.state.isProfileLoaded = true
+        this.visitNextProfile()
+      } else if (tab && tab.id) {
+        //console.log('Updating tab to visit next profile')
+        // Save profile to visitedProfiles, and move to profile page
+        chrome.storage.sync.set({
+          visitedProfiles: [...visitedProfiles, nextProfile],
+        })
         await chrome.tabs.update(tab.id, { url: nextProfile })
       } else {
         console.warn('Failed to access this profile, moving to the next.')
         await this.visitNextProfile()
       }
+
+      // Else, move to next page
     } else {
-      console.log('Trying to get next page')
+      //console.log('Moving to next page')
       const tab = await chrome.tabs.get(this.state.startingTabId)
       await chrome.tabs.sendMessage(tab.id!, { action: 'nextPage' })
-      console.log('Moving to next page')
       await this.delay(5, 5)
       this.state.movingToNextPage = true
       this.state.isProfileLoaded = true
-      // check profilelinks
-
+      // Get links for this page
       await chrome.tabs.sendMessage(tab.id!, { action: 'getProfileLinks' })
-      console.log('Sent get links request')
-
-      // append new links to the current array
-      // continue loop from previous index
-
-      // console.log('Finished Visiting Task.')
-      // this.cleanupWorkingTab()
     }
   }
 
@@ -55,8 +65,8 @@ export class ProfileVisitor {
       const tab = await chrome.tabs.get(this.state.startingTabId)
 
       if (tab && tab.id) {
+        //console.log('Navigating back to the original page')
         await chrome.tabs.update(tab.id, { url: this.state.originalPage })
-        console.log('Navigating back to the original page')
       } else if (retries > 0) {
         console.warn(
           `No active tab found, retrying in 3 seconds... (${retries} retries left)`
@@ -86,11 +96,12 @@ export class ProfileVisitor {
 
   async cleanupWorkingTab(): Promise<void> {
     if (this.state.startingTabId !== undefined) {
+      // Break task and close the tab
       await chrome.tabs.remove(this.state.startingTabId)
       this.state.startingTabId = undefined
       this.state.isVisiting = false
       chrome.storage.local.set({ task: this.state })
-      console.log('Closing work tab.')
+      console.log('Closing task tab.')
     }
   }
 

@@ -1,4 +1,4 @@
-import { Message } from './../utils/types'
+import { Message } from './../utils/messages'
 
 class ProfileVisitor {
   constructor() {
@@ -8,6 +8,7 @@ class ProfileVisitor {
   private initializeListeners(): void {
     chrome.runtime.onMessage.addListener(
       (message: Message, sender, sendResponse) => {
+        // Get Profiles Links
         if (message.action === 'getProfileLinks') {
           const links = this.getAllProfileLinks()
 
@@ -15,6 +16,7 @@ class ProfileVisitor {
             action: 'getProfileLinks',
             data: links,
           })
+          // Send Connection Request
         } else if (message.action === 'sendConnectRequest') {
           this.sendConnectionRequest()
             .then(() => sendResponse({ status: 'completed' }))
@@ -22,6 +24,7 @@ class ProfileVisitor {
               sendResponse({ status: 'failed', error: error.toString() })
             )
           return true
+          // Move to next page
         } else if (message.action === 'nextPage') {
           console.log('next page')
           this.nextPage()
@@ -54,7 +57,6 @@ class ProfileVisitor {
   }
 
   private async sendConnectionRequest(): Promise<void> {
-    // Attempt to send a connection request
     try {
       const connectButton = document.querySelector(
         'button.artdeco-button--primary.artdeco-button[aria-label*="Invite"]'
@@ -64,7 +66,6 @@ class ProfileVisitor {
       // Wait for the modal to load
       await new Promise((resolve) => setTimeout(resolve, 4000))
 
-      // Click the "Send without a note" button in the modal
       const modalButton = document.querySelector(
         'button[aria-label*="Send without a note"]'
       ) as HTMLButtonElement
@@ -74,9 +75,11 @@ class ProfileVisitor {
           setTimeout(resolve, 2000 + Math.random() * 3000)
         )
         modalButton.click()
-        this.logToBackground('Pressed the send button on the modal')
+        this.logToBackground('Sent connection request.')
       } else {
-        this.logToBackground('Cannot find the send button on the modal')
+        this.logToBackground(
+          'Cannot find the modal button. Request was not sent.'
+        )
       }
     } catch (error) {
       this.logToBackground('Failed to send connection request:', error)
@@ -110,5 +113,4 @@ class ProfileVisitor {
   }
 }
 
-// Initialize the content script
 new ProfileVisitor()

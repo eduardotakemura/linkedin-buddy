@@ -1,5 +1,4 @@
 export interface ProfileVisitorState {
-  visitedProfiles: string[]
   profileLinks: string[]
   currentIndex: number
   isVisiting: boolean
@@ -7,16 +6,4 @@ export interface ProfileVisitorState {
   startingTabId?: number
   isProfileLoaded: boolean
   movingToNextPage: boolean
-}
-
-export interface Message {
-  action:
-    | 'startVisiting'
-    | 'stopVisiting'
-    | 'getProfileLinks'
-    | 'profileVisited'
-    | 'sendConnectRequest'
-    | 'connectRequestComplete'
-    | 'nextPage'
-  data?: any
 }

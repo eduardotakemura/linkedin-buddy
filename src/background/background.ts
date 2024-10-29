@@ -1,10 +1,13 @@
-import { ProfileVisitorState, Message } from './../utils/types'
+import { ProfileVisitorState } from './../utils/types'
 import { ProfileVisitor } from './profileVisitor'
 import { ConnectionRequester } from './connectionRequester'
 
+// chrome.storage.sync.set({
+//   visitedProfiles: [],
+// })
+
 class ProfileVisitorBackground {
   private state: ProfileVisitorState = {
-    visitedProfiles: [],
     profileLinks: [],
     currentIndex: 0,
     isVisiting: false,
@@ -23,29 +26,29 @@ class ProfileVisitorBackground {
   initializeListeners() {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       try {
+        // Starting Loop
         if (message.action === 'startVisiting') {
           this.startVisitingProcess(message.data.seedLink)
+
+          // Stop Task Trigger
         } else if (message.action === 'stopVisiting') {
           console.log('Manual Stop Triggered')
           this.profileVisitor.cleanupWorkingTab()
+
+          // Query contentScript for links of current page
         } else if (message.action === 'getProfileLinks') {
-          // this.state.profileLinks = message.data
-          var links = message.data
-          // If next page
+          var currentLinks = message.data
+
+          // WE NEED THIS CHECK? JUST EXTEND EMPTY ARRAY WILL RESULT THE SAME
           if (this.state.movingToNextPage) {
-            links = [links[0]]
-            this.state.profileLinks.push(...links)
-            console.log('pushed new links')
-            console.log(sender)
+            this.state.profileLinks.push(...currentLinks)
           } else {
-            // First run
-            this.state.profileLinks = [links[0]]
-            console.log('first run')
+            this.state.profileLinks = currentLinks
           }
           this.state.originalPage = sender.tab?.url || ''
-          console.log(this.state.profileLinks)
-          console.log(this.state.originalPage)
           this.profileVisitor.visitNextProfile()
+
+          // Logs messages coming from the script
         } else if (message.action === 'log') {
           console.log('Content Script Log:', ...message.data)
         }
@@ -55,6 +58,7 @@ class ProfileVisitorBackground {
       }
     })
 
+    // Listener to catch pages update
     chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
       if (
         changeInfo.status === 'complete' &&
@@ -67,7 +71,7 @@ class ProfileVisitorBackground {
   }
 
   private async startVisitingProcess(seedLink: string): Promise<void> {
-    console.log('Starting visiting process')
+    console.log('Starting task')
     this.state.isVisiting = true
     this.state.currentIndex = 0
     chrome.storage.local.set({ task: this.state })
@@ -90,17 +94,13 @@ class ProfileVisitorBackground {
     const maxRetries = 20
     let attempts = 0
 
+    // Check if content had loaded, retry for 60 seconds if not
     while (attempts < maxRetries) {
-      if (!this.state.isVisiting) break
-      // Check if the content is ready
+      if (!this.state.isVisiting) break // Check for manual stop
       try {
         await chrome.tabs.sendMessage(tabId, { action: 'getProfileLinks' })
-        console.log('Content script is ready')
         break
       } catch {
-        console.info(
-          `Retrying connection to content script (Attempt ${attempts + 1})`
-        )
         attempts++
         await this.profileVisitor.delay(3)
       }
@@ -119,16 +119,14 @@ class ProfileVisitorBackground {
 
     const isProfile = url.includes('/in/')
     const isOriginalPage = url === this.state.originalPage
-    const isNextPage = this.state.movingToNextPage
 
     const tab = await chrome.tabs.get(this.state.startingTabId)
     if (!tab || tab.url !== url) return
 
     if (isProfile) {
-      console.log('On profile page, waiting before navigating back')
-
-      // Wait for the page to load
-      await this.profileVisitor.delay(5, 30)
+      //console.log('On profile page, waiting before navigating back')
+      // Wait for the page load
+      await this.profileVisitor.delay(10, 30)
 
       // Send connection request
       const connectionRequester = new ConnectionRequester(
@@ -139,11 +137,9 @@ class ProfileVisitorBackground {
 
       // Back to previous page
       this.state.isProfileLoaded = true
-      this.state.visitedProfiles.push(url)
-      console.log(this.state.visitedProfiles)
       await this.profileVisitor.navigateBack()
     } else if (isOriginalPage) {
-      console.log('Back to original page, visiting next profile')
+      //console.log('Back to original page, visiting next profile')
       await this.profileVisitor.delay(10, 20)
       this.profileVisitor.visitNextProfile()
     }
