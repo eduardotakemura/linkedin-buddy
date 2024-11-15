@@ -39,7 +39,6 @@ class ProfileVisitor {
   }
 
   private getAllProfileLinks(): string[] {
-    console.log('getting links from this page!')
     const cards = document.querySelectorAll('.entity-result__divider')
     const profileLinks: string[] = Array.from(cards)
       .map((card) => {

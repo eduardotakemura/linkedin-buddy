@@ -2,10 +2,6 @@ import { ProfileVisitorState } from './../utils/types'
 import { ProfileVisitor } from './profileVisitor'
 import { ConnectionRequester } from './connectionRequester'
 
-// chrome.storage.sync.set({
-//   visitedProfiles: [],
-// })
-
 class ProfileVisitorBackground {
   private state: ProfileVisitorState = {
     profileLinks: [],
@@ -26,11 +22,11 @@ class ProfileVisitorBackground {
   initializeListeners() {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       try {
-        // Starting Loop
+        // Starting Campaign Loop
         if (message.action === 'startVisiting') {
-          this.startVisitingProcess(message.data.seedLink)
+          this.startVisitingProcess(message.data.seed)
 
-          // Stop Task Trigger
+          // Stop Campaign Trigger
         } else if (message.action === 'stopVisiting') {
           console.log('Manual Stop Triggered')
           this.profileVisitor.cleanupWorkingTab()
@@ -39,7 +35,6 @@ class ProfileVisitorBackground {
         } else if (message.action === 'getProfileLinks') {
           var currentLinks = message.data
 
-          // WE NEED THIS CHECK? JUST EXTEND EMPTY ARRAY WILL RESULT THE SAME
           if (this.state.movingToNextPage) {
             this.state.profileLinks.push(...currentLinks)
           } else {
@@ -71,7 +66,7 @@ class ProfileVisitorBackground {
   }
 
   private async startVisitingProcess(seedLink: string): Promise<void> {
-    console.log('Starting task')
+    console.log('Starting Campaign')
     this.state.isVisiting = true
     this.state.currentIndex = 0
     chrome.storage.local.set({ task: this.state })
@@ -124,7 +119,6 @@ class ProfileVisitorBackground {
     if (!tab || tab.url !== url) return
 
     if (isProfile) {
-      //console.log('On profile page, waiting before navigating back')
       // Wait for the page load
       await this.profileVisitor.delay(10, 30)
 
@@ -139,7 +133,6 @@ class ProfileVisitorBackground {
       this.state.isProfileLoaded = true
       await this.profileVisitor.navigateBack()
     } else if (isOriginalPage) {
-      //console.log('Back to original page, visiting next profile')
       await this.profileVisitor.delay(10, 20)
       this.profileVisitor.visitNextProfile()
     }

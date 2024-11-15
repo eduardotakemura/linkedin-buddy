@@ -23,7 +23,7 @@ export class ProfileVisitor {
       })
     })
 
-    // If there's still links
+    // Check if there's still links to visit
     if (this.state.currentIndex < this.state.profileLinks.length) {
       const nextProfile = this.state.profileLinks[this.state.currentIndex]
       this.state.currentIndex++
@@ -35,7 +35,6 @@ export class ProfileVisitor {
         this.state.isProfileLoaded = true
         this.visitNextProfile()
       } else if (tab && tab.id) {
-        //console.log('Updating tab to visit next profile')
         // Save profile to visitedProfiles, and move to profile page
         chrome.storage.sync.set({
           visitedProfiles: [...visitedProfiles, nextProfile],
@@ -45,10 +44,8 @@ export class ProfileVisitor {
         console.warn('Failed to access this profile, moving to the next.')
         await this.visitNextProfile()
       }
-
       // Else, move to next page
     } else {
-      //console.log('Moving to next page')
       const tab = await chrome.tabs.get(this.state.startingTabId)
       await chrome.tabs.sendMessage(tab.id!, { action: 'nextPage' })
       await this.delay(5, 5)
@@ -65,7 +62,6 @@ export class ProfileVisitor {
       const tab = await chrome.tabs.get(this.state.startingTabId)
 
       if (tab && tab.id) {
-        //console.log('Navigating back to the original page')
         await chrome.tabs.update(tab.id, { url: this.state.originalPage })
       } else if (retries > 0) {
         console.warn(
@@ -101,7 +97,7 @@ export class ProfileVisitor {
       this.state.startingTabId = undefined
       this.state.isVisiting = false
       chrome.storage.local.set({ task: this.state })
-      console.log('Closing task tab.')
+      console.log('Closing Campaign Tab.')
     }
   }
 
