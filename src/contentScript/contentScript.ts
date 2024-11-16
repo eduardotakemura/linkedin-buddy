@@ -19,10 +19,12 @@ class ProfileVisitor {
           // Send Connection Request
         } else if (message.action === 'sendConnectRequest') {
           this.sendConnectionRequest()
-            .then(() => sendResponse({ status: 'completed' }))
-            .catch((error) =>
+            .then(() => {
+              sendResponse({ status: 'completed' })
+            })
+            .catch((error) => {
               sendResponse({ status: 'failed', error: error.toString() })
-            )
+            })
           return true
           // Move to next page
         } else if (message.action === 'nextPage') {
@@ -75,15 +77,27 @@ class ProfileVisitor {
         )
         modalButton.click()
         this.logToBackground('Sent connection request.')
+        chrome.runtime.sendMessage({
+          action: 'connectRequestComplete',
+          status: 'completed',
+        })
       } else {
         this.logToBackground(
           'Cannot find the modal button. Request was not sent.'
         )
+        chrome.runtime.sendMessage({
+          action: 'connectRequestComplete',
+          status: 'failed',
+          error: 'Modal button not found',
+        })
       }
     } catch (error) {
       this.logToBackground('Failed to send connection request:', error)
-    } finally {
-      chrome.runtime.sendMessage({ action: 'connectRequestComplete' })
+      chrome.runtime.sendMessage({
+        action: 'connectRequestComplete',
+        status: 'failed',
+        error: error?.toString(),
+      })
     }
   }
 

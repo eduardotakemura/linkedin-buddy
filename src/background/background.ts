@@ -10,6 +10,10 @@ class ProfileVisitorBackground {
     originalPage: '',
     isProfileLoaded: true,
     movingToNextPage: false,
+    visitedCount: 0,
+    connectionCount: 0,
+    visitingLimit: 0,
+    connectionLimit: 0,
   }
   private profileVisitor: ProfileVisitor
 
@@ -24,12 +28,20 @@ class ProfileVisitorBackground {
       try {
         // Starting Campaign Loop
         if (message.action === 'startVisiting') {
+          this.state.visitingLimit = message.data.visitingLimit
+          this.state.connectionLimit = message.data.connectionLimit
           this.startVisitingProcess(message.data.seed)
 
           // Stop Campaign Trigger
         } else if (message.action === 'stopVisiting') {
           console.log('Manual Stop Triggered')
           this.profileVisitor.cleanupWorkingTab()
+          console.log(
+            `Manual Stop Report: Visited ${this.state.visitedCount} profiles, Sent ${this.state.connectionCount} connection requests.`
+          )
+          // Reset counters
+          this.state.visitedCount = 0
+          this.state.connectionCount = 0
 
           // Query contentScript for links of current page
         } else if (message.action === 'getProfileLinks') {
@@ -67,8 +79,13 @@ class ProfileVisitorBackground {
 
   private async startVisitingProcess(seedLink: string): Promise<void> {
     console.log('Starting Campaign')
+    console.log(
+      `Seed Link: ${seedLink}, Visiting Limit: ${this.state.visitingLimit}, Connection Limit: ${this.state.connectionLimit}`
+    )
     this.state.isVisiting = true
     this.state.currentIndex = 0
+    this.state.visitedCount = 0
+    this.state.connectionCount = 0
     chrome.storage.local.set({ task: this.state })
 
     // Popup new pinned tab
@@ -124,7 +141,8 @@ class ProfileVisitorBackground {
 
       // Send connection request
       const connectionRequester = new ConnectionRequester(
-        this.state.startingTabId
+        this.state.startingTabId,
+        this.state
       )
       await connectionRequester.sendConnectionRequestToContent()
       await this.profileVisitor.delay(2, 5)

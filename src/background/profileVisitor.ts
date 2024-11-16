@@ -11,7 +11,8 @@ export class ProfileVisitor {
     if (
       !this.state.isVisiting ||
       this.state.startingTabId === undefined ||
-      !this.state.isProfileLoaded
+      !this.state.isProfileLoaded ||
+      this.state.visitedCount >= this.state.visitingLimit
     )
       return
     this.state.isProfileLoaded = false
@@ -39,6 +40,7 @@ export class ProfileVisitor {
         chrome.storage.sync.set({
           visitedProfiles: [...visitedProfiles, nextProfile],
         })
+        this.state.visitedCount++
         await chrome.tabs.update(tab.id, { url: nextProfile })
       } else {
         console.warn('Failed to access this profile, moving to the next.')
@@ -92,12 +94,18 @@ export class ProfileVisitor {
 
   async cleanupWorkingTab(): Promise<void> {
     if (this.state.startingTabId !== undefined) {
-      // Break task and close the tab
       await chrome.tabs.remove(this.state.startingTabId)
       this.state.startingTabId = undefined
       this.state.isVisiting = false
       chrome.storage.local.set({ task: this.state })
       console.log('Closing Campaign Tab.')
+      console.log(
+        `Campaign Report: Visited ${this.state.visitedCount} profiles, Sent ${this.state.connectionCount} connection requests.`
+      ) // Log report
+
+      // Reset counters
+      this.state.visitedCount = 0
+      this.state.connectionCount = 0
     }
   }
 

@@ -1,8 +1,10 @@
+import { ProfileVisitorState } from '../utils/types'
 export class ConnectionRequester {
   private tabId: number
-
-  constructor(tabId: number) {
+  private state: ProfileVisitorState
+  constructor(tabId: number, state: ProfileVisitorState) {
     this.tabId = tabId
+    this.state = state
   }
 
   public async sendConnectionRequestToContent(): Promise<void> {
@@ -17,11 +19,35 @@ export class ConnectionRequester {
       const response = await chrome.tabs.sendMessage(this.tabId, {
         action: 'sendConnectRequest',
       })
-      if (response.status !== 'completed') {
-        console.log('Connection request failed:', response.error)
+      if (response && response.status === 'completed') {
+        this.state.connectionCount++
+        console.log(`Sent ${this.state.connectionCount} connection requests.`)
+        if (this.state.connectionCount >= this.state.connectionLimit) {
+          console.log('Connection limit reached. Stopping campaign.')
+          await this.cleanupWorkingTab()
+        }
+      } else {
+        console.log('Connection request failed:', response?.error)
       }
     } catch (error) {
       console.error('Failed to send connection request message:', error)
+    }
+  }
+
+  private async cleanupWorkingTab(): Promise<void> {
+    if (this.state.startingTabId !== undefined) {
+      await chrome.tabs.remove(this.state.startingTabId)
+      this.state.startingTabId = undefined
+      this.state.isVisiting = false
+      chrome.storage.local.set({ task: this.state })
+      console.log('Closing Campaign Tab.')
+      console.log(
+        `Campaign Report: Visited ${this.state.visitedCount} profiles, Sent ${this.state.connectionCount} connection requests.`
+      ) // Log report
+
+      // Reset counters
+      this.state.visitedCount = 0
+      this.state.connectionCount = 0
     }
   }
 }
