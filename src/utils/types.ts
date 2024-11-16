@@ -8,6 +8,5 @@ export interface ProfileVisitorState {
   movingToNextPage: boolean
   visitedCount: number
   connectionCount: number
-  visitingLimit: number
   connectionLimit: number
 }

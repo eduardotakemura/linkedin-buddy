@@ -11,19 +11,18 @@ export class ProfileVisitor {
     if (
       !this.state.isVisiting ||
       this.state.startingTabId === undefined ||
-      !this.state.isProfileLoaded ||
-      this.state.visitedCount >= this.state.visitingLimit
+      !this.state.isProfileLoaded
     )
       return
     this.state.isProfileLoaded = false
     const tab = await chrome.tabs.get(this.state.startingTabId)
     // Retrieve visited profiles array
-    const visitedProfiles: string[] = await new Promise((resolve) => {
-      chrome.storage.sync.get(['visitedProfiles'], (result) => {
-        resolve(result.visitedProfiles || [])
-      })
-    })
-
+    // const visitedProfiles: string[] = await new Promise((resolve) => {
+    //   chrome.storage.sync.get(['visitedProfiles'], (result) => {
+    //     resolve(result.visitedProfiles || [])
+    //   })
+    // })
+    const visitedProfiles: string[] = []
     // Check if there's still links to visit
     if (this.state.currentIndex < this.state.profileLinks.length) {
       const nextProfile = this.state.profileLinks[this.state.currentIndex]

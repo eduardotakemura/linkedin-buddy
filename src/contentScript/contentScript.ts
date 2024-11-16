@@ -19,8 +19,8 @@ class ProfileVisitor {
           // Send Connection Request
         } else if (message.action === 'sendConnectRequest') {
           this.sendConnectionRequest()
-            .then(() => {
-              sendResponse({ status: 'completed' })
+            .then((status) => {
+              sendResponse({ status })
             })
             .catch((error) => {
               sendResponse({ status: 'failed', error: error.toString() })
@@ -57,11 +57,18 @@ class ProfileVisitor {
     return [...new Set(profileLinks)]
   }
 
-  private async sendConnectionRequest(): Promise<void> {
+  private async sendConnectionRequest(): Promise<{
+    status: string
+    error?: string
+  }> {
     try {
       const connectButton = document.querySelector(
         'button.artdeco-button--primary.artdeco-button[aria-label*="Invite"]'
       ) as HTMLButtonElement
+
+      if (!connectButton) {
+        throw new Error('Connect button not found')
+      }
       connectButton.click()
 
       // Wait for the modal to load
@@ -77,27 +84,16 @@ class ProfileVisitor {
         )
         modalButton.click()
         this.logToBackground('Sent connection request.')
-        chrome.runtime.sendMessage({
-          action: 'connectRequestComplete',
-          status: 'completed',
-        })
+        return { status: 'completed' }
       } else {
         this.logToBackground(
           'Cannot find the modal button. Request was not sent.'
         )
-        chrome.runtime.sendMessage({
-          action: 'connectRequestComplete',
-          status: 'failed',
-          error: 'Modal button not found',
-        })
+        throw new Error('Modal button not found')
       }
     } catch (error) {
       this.logToBackground('Failed to send connection request:', error)
-      chrome.runtime.sendMessage({
-        action: 'connectRequestComplete',
-        status: 'failed',
-        error: error?.toString(),
-      })
+      return { status: 'failed', error: error?.toString() }
     }
   }
 

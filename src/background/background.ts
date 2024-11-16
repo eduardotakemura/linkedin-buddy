@@ -12,7 +12,6 @@ class ProfileVisitorBackground {
     movingToNextPage: false,
     visitedCount: 0,
     connectionCount: 0,
-    visitingLimit: 0,
     connectionLimit: 0,
   }
   private profileVisitor: ProfileVisitor
@@ -28,7 +27,6 @@ class ProfileVisitorBackground {
       try {
         // Starting Campaign Loop
         if (message.action === 'startVisiting') {
-          this.state.visitingLimit = message.data.visitingLimit
           this.state.connectionLimit = message.data.connectionLimit
           this.startVisitingProcess(message.data.seed)
 
@@ -80,7 +78,7 @@ class ProfileVisitorBackground {
   private async startVisitingProcess(seedLink: string): Promise<void> {
     console.log('Starting Campaign')
     console.log(
-      `Seed Link: ${seedLink}, Visiting Limit: ${this.state.visitingLimit}, Connection Limit: ${this.state.connectionLimit}`
+      `Seed Link: ${seedLink}, Connection Limit: ${this.state.connectionLimit}`
     )
     this.state.isVisiting = true
     this.state.currentIndex = 0

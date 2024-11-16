@@ -4,15 +4,14 @@ import './popup.css'
 
 const App: React.FC<{}> = () => {
   var [seed, setSeed] = useState<string>('')
-  var [visitingLimit, setVisitingLimit] = useState(100) // daily 80-100
-  var [connectionLimit, setConnectionLimit] = useState(20) // around ~100 per week
+  var [connectionLimit, setConnectionLimit] = useState(15) // around ~100 per week
 
   const handleStartVisiting = () => {
     chrome.storage.local.get(['task'], (response) => {
       if (!response.task.isVisiting) {
         chrome.runtime.sendMessage({
           action: 'startVisiting',
-          data: { seed, visitingLimit, connectionLimit },
+          data: { seed, connectionLimit },
         })
       }
     })
@@ -43,20 +42,9 @@ const App: React.FC<{}> = () => {
         </div>
 
         <div className="input-container">
-          <h3>Visiting Limit</h3>
-          <input
-            type="number"
-            placeholder="Enter daily limit"
-            value={visitingLimit}
-            onChange={(event) => setVisitingLimit(parseInt(event.target.value))}
-          />
-        </div>
-
-        <div className="input-container">
           <h3>Connection Limit</h3>
           <input
             type="number"
-            placeholder="Enter weekly limit"
             value={connectionLimit}
             onChange={(event) =>
               setConnectionLimit(parseInt(event.target.value))

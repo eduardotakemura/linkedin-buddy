@@ -2,6 +2,7 @@ import { ProfileVisitorState } from '../utils/types'
 export class ConnectionRequester {
   private tabId: number
   private state: ProfileVisitorState
+
   constructor(tabId: number, state: ProfileVisitorState) {
     this.tabId = tabId
     this.state = state
@@ -19,15 +20,16 @@ export class ConnectionRequester {
       const response = await chrome.tabs.sendMessage(this.tabId, {
         action: 'sendConnectRequest',
       })
-      if (response && response.status === 'completed') {
+      console.log(response.status)
+      if (response.status.status === 'completed') {
         this.state.connectionCount++
         console.log(`Sent ${this.state.connectionCount} connection requests.`)
         if (this.state.connectionCount >= this.state.connectionLimit) {
           console.log('Connection limit reached. Stopping campaign.')
           await this.cleanupWorkingTab()
         }
-      } else {
-        console.log('Connection request failed:', response?.error)
+      } else if (response?.status.status === 'failed') {
+        console.warn(`Failed to send connection request: ${response.error}`)
       }
     } catch (error) {
       console.error('Failed to send connection request message:', error)
