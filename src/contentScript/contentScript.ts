@@ -28,13 +28,14 @@ class ProfileVisitor {
           return true
           // Move to next page
         } else if (message.action === 'nextPage') {
-          console.log('next page')
           this.nextPage()
             .then(() => sendResponse({ status: 'completed' }))
             .catch((error) =>
               sendResponse({ status: 'failed', error: error.toString() })
             )
           return true
+        } else if (message.action === 'showSidePanel') {
+          console.log(message)
         }
       }
     )
@@ -42,10 +43,12 @@ class ProfileVisitor {
 
   private getAllProfileLinks(): string[] {
     const cards = document.querySelectorAll('.entity-result__divider')
+    console.log(cards)
     const profileLinks: string[] = Array.from(cards)
       .map((card) => {
-        const mainLink =
-          card.querySelector<HTMLAnchorElement>('a.app-aware-link')
+        const mainLink = card.querySelector<HTMLAnchorElement>(
+          'span.entity-result__title-text > a'
+        )
         if (mainLink?.href.includes('linkedin.com/in/')) {
           return mainLink.href
         }

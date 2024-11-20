@@ -13,14 +13,25 @@
     "default_title": "LinkedIn Buddy",
     "default_icon": "icon.png"
   },
-  "permissions": ["storage", "scripting", "activeTab", "tabs", "history"],
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab",
+    "tabs",
+    "history",
+    "contextMenus",
+    "sidePanel"
+  ],
   "options_page": "options.html",
+  "side_panel": {
+    "default_path": "sidePanel.html"
+  },
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["https://www.linkedin.com/*"],
+      "matches": ["<all_urls>"],
       "js": ["contentScript.js"]
     }
   ],

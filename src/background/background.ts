@@ -2,6 +2,27 @@ import { ProfileVisitorState } from './../utils/types'
 import { ProfileVisitor } from './profileVisitor'
 import { ConnectionRequester } from './connectionRequester'
 
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id: 'comment',
+    title: 'Create Comment',
+    contexts: ['selection'],
+  })
+  chrome.contextMenus.onClicked.addListener((event) => {
+    if (event.menuItemId === 'comment' && event.selectionText) {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.id) {
+          console.log(event.selectionText)
+          chrome.tabs.sendMessage(tabs[0].id, {
+            action: 'showSidePanel',
+            selectionText: event.selectionText,
+          })
+        }
+      })
+    }
+  })
+})
+
 class ProfileVisitorBackground {
   private state: ProfileVisitorState = {
     profileLinks: [],

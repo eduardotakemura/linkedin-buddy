@@ -9,6 +9,7 @@ module.exports = {
     options: path.resolve('src/options/options.tsx'),
     background: path.resolve('src/background/background.ts'),
     contentScript: path.resolve('src/contentScript/contentScript.ts'),
+    sidePanel: path.resolve('src/sidePanel/sidePanel.tsx'),
   },
   module: {
     rules: [
@@ -44,7 +45,8 @@ module.exports = {
     }),
     ...getHtmlPlugins([
       'popup',
-      'options'
+      'options',
+      'sidePanel',
     ]),
   ],
   output: {

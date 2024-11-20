@@ -7,5 +7,6 @@ export interface Message {
     | 'sendConnectRequest'
     | 'connectRequestComplete'
     | 'nextPage'
+    | 'showSidePanel'
   data?: any
 }

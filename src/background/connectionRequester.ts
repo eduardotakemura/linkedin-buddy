@@ -20,7 +20,7 @@ export class ConnectionRequester {
       const response = await chrome.tabs.sendMessage(this.tabId, {
         action: 'sendConnectRequest',
       })
-      console.log(response.status)
+
       if (response.status.status === 'completed') {
         this.state.connectionCount++
         console.log(`Sent ${this.state.connectionCount} connection requests.`)
