@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
-import { createRoot } from 'react-dom/client'
-import './popup.css'
+import { useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import './popup.css';
 
 const App: React.FC<{}> = () => {
-  var [seed, setSeed] = useState<string>('')
-  var [connectionLimit, setConnectionLimit] = useState(15) // around ~100 per week
+  var [seed, setSeed] = useState<string>('');
+  var [connectionLimit, setConnectionLimit] = useState(15); // around ~100 per week
 
   const handleStartVisiting = () => {
     chrome.storage.local.get(['task'], (response) => {
@@ -12,19 +12,31 @@ const App: React.FC<{}> = () => {
         chrome.runtime.sendMessage({
           action: 'startVisiting',
           data: { seed, connectionLimit },
-        })
+        });
       }
-    })
-  }
+    });
+  };
 
   const handleStopVisiting = () => {
     chrome.storage.local.get(['task'], (response) => {
       if (response.task.isVisiting) {
-        console.log('stopping!')
-        chrome.runtime.sendMessage({ action: 'stopVisiting' })
+        console.log('stopping!');
+        chrome.runtime.sendMessage({ action: 'stopVisiting' });
       }
-    })
-  }
+    });
+  };
+
+  const handleStartWithdrawConnections = () => {
+    chrome.runtime.sendMessage({
+      action: 'startWithdrawConnections',
+    });
+  };
+
+  const handleStopWithdrawConnections = () => {
+    chrome.runtime.sendMessage({
+      action: 'stopWithdrawConnections',
+    });
+  };
 
   return (
     <div className="main-container">
@@ -53,20 +65,42 @@ const App: React.FC<{}> = () => {
         </div>
 
         <div className="button-container">
-          <button id="visitProfile" onClick={() => handleStartVisiting()}>
+          <button
+            className="action-button"
+            onClick={() => handleStartVisiting()}
+          >
             Start Campaign
           </button>
-          <button id="visitProfile" onClick={() => handleStopVisiting()}>
+          <button
+            className="action-button"
+            onClick={() => handleStopVisiting()}
+          >
             Stop Campaign
+          </button>
+        </div>
+
+        <h2>Withdraw Connections</h2>
+        <div className="button-container">
+          <button
+            className="action-button"
+            onClick={handleStartWithdrawConnections}
+          >
+            Start Withdrawal
+          </button>
+          <button
+            className="action-button"
+            onClick={handleStopWithdrawConnections}
+          >
+            Stop Withdrawal
           </button>
         </div>
       </form>
     </div>
-  )
-}
+  );
+};
 
-const container = document.createElement('div')
-document.body.appendChild(container)
+const container = document.createElement('div');
+document.body.appendChild(container);
 
-const root = createRoot(container)
-root.render(<App />)
+const root = createRoot(container);
+root.render(<App />);

@@ -8,5 +8,6 @@ export interface Message {
     | 'connectRequestComplete'
     | 'nextPage'
     | 'showSidePanel'
-  data?: any
+    | 'withdrawConnections';
+  data?: any;
 }

@@ -77,21 +77,21 @@ button {
   transition: background-color 0.2s;
 }
 
-button#visitProfile {
+button.action-button {
   background-color: #0a66c2;
   color: white;
 }
 
-button#visitProfile:hover {
+button.action-button:hover {
   background-color: #004182;
 }
 
-button#visitProfile:last-child {
+button.action-button:last-child {
   background-color: #fff;
   color: #0a66c2;
   border: 1px solid #0a66c2;
 }
 
-button#visitProfile:last-child:hover {
+button.action-button:last-child:hover {
   background-color: #f3f6f8;
 }
