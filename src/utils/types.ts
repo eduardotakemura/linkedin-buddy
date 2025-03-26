@@ -6,7 +6,8 @@ export interface ProfileVisitorState {
   startingTabId?: number;
   isProfileLoaded: boolean;
   movingToNextPage: boolean;
-  visitedCount: number;
+  visitCount: number;
+  visitLimit: number;
   connectionCount: number;
   connectionLimit: number;
 }

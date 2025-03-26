@@ -10,11 +10,13 @@ class ProfileVisitor {
       (message: Message, sender, sendResponse) => {
         // Get Profiles Links
         if (message.action === 'getProfileLinks') {
-          const links = this.getAllProfileLinks();
+          this.delay(10).then(() => {
+            const links = this.getAllProfileLinks();
 
-          chrome.runtime.sendMessage({
-            action: 'getProfileLinks',
-            data: links,
+            chrome.runtime.sendMessage({
+              action: 'getProfileLinks',
+              data: links,
+            });
           });
           // Send Connection Request
         } else if (message.action === 'sendConnectRequest') {
@@ -80,37 +82,60 @@ class ProfileVisitor {
     error?: string;
   }> {
     try {
-      const connectButton = document.querySelector(
+      // Try to find the connect button on the main page
+      var connectButton = document.querySelector(
         'button.artdeco-button--primary.artdeco-button[aria-label*="Invite"]'
       ) as HTMLButtonElement;
 
-      if (!connectButton) {
-        throw new Error('Connect button not found');
+      if (connectButton) {
+        connectButton.click();
+      } else {
+        // Try to find the more info button
+        const moreButton = document.querySelector(
+          'button.artdeco-button--secondary.artdeco-button[aria-label*="More"]'
+        ) as HTMLButtonElement;
+
+        // Quit if not found
+        if (!moreButton) {
+          throw new Error(
+            'Connect button not found, then more info button also not found'
+          );
+        }
+        moreButton.click();
+        await this.delay(2);
+
+        // Try to find the connect button
+        const connectWindowButton = document.querySelector(
+          'div.artdeco-dropdown__item[aria-label*="Invite"]'
+        ) as HTMLElement;
+
+        // Quit if not found
+        if (!connectWindowButton) {
+          throw new Error('Connect button not found in the window');
+        }
+        connectWindowButton.click();
       }
-      connectButton.click();
 
       // Wait for the modal to load
-      await new Promise((resolve) => setTimeout(resolve, 4000));
+      await this.delay(4);
 
       const modalButton = document.querySelector(
         'button[aria-label*="Send without a note"]'
       ) as HTMLButtonElement;
 
       if (modalButton) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, 2000 + Math.random() * 3000)
-        );
+        await this.delay(2 + Math.random() * 3);
         modalButton.click();
         this.logToBackground('Sent connection request.');
         return { status: 'completed' };
       } else {
-        this.logToBackground(
-          'Cannot find the modal button. Request was not sent.'
-        );
         throw new Error('Modal button not found');
       }
     } catch (error) {
-      this.logToBackground('Failed to send connection request:', error);
+      this.logToBackground(
+        'Failed to send connection request:',
+        error?.toString()
+      );
       return { status: 'failed', error: error?.toString() };
     }
   }

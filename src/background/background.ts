@@ -33,7 +33,8 @@ class ProfileVisitorBackground {
     originalPage: '',
     isProfileLoaded: true,
     movingToNextPage: false,
-    visitedCount: 0,
+    visitCount: 0,
+    visitLimit: 0,
     connectionCount: 0,
     connectionLimit: 0,
   };
@@ -51,6 +52,7 @@ class ProfileVisitorBackground {
         // Starting Campaign Loop
         if (message.action === 'startVisiting') {
           this.state.connectionLimit = message.data.connectionLimit;
+          this.state.visitLimit = message.data.profileLimit;
           this.startVisitingProcess(message.data.seed);
 
           // Stop Campaign Trigger
@@ -58,10 +60,10 @@ class ProfileVisitorBackground {
           console.log('Manual Stop Triggered');
           this.profileVisitor.cleanupWorkingTab();
           console.log(
-            `Manual Stop Report: Visited ${this.state.visitedCount} profiles, Sent ${this.state.connectionCount} connection requests.`
+            `Manual Stop Report: Visited ${this.state.visitCount} profiles, Sent ${this.state.connectionCount} connection requests.`
           );
           // Reset counters
-          this.state.visitedCount = 0;
+          this.state.visitCount = 0;
           this.state.connectionCount = 0;
 
           // Query contentScript for links of current page
@@ -113,11 +115,11 @@ class ProfileVisitorBackground {
   private async startVisitingProcess(seedLink: string): Promise<void> {
     console.log('Starting Campaign');
     console.log(
-      `Seed Link: ${seedLink}, Connection Limit: ${this.state.connectionLimit}`
+      `Seed Link: ${seedLink}, Connection Limit: ${this.state.connectionLimit}, Visiting Limit: ${this.state.visitLimit}`
     );
     this.state.isVisiting = true;
     this.state.currentIndex = 0;
-    this.state.visitedCount = 0;
+    this.state.visitCount = 0;
     this.state.connectionCount = 0;
     chrome.storage.local.set({ task: this.state });
 
