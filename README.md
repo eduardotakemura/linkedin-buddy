@@ -1,6 +1,6 @@
-# LinkedIn Buddy
+# LinkedIn Buddy Browser Extension
 
-A Chrome extension that automates LinkedIn profile visits and connection requests, helping you grow your professional network efficiently and safely.
+Save 30+ min daily automating LinkedIn profile visiting and connection requesting, helping you grow your professional network efficiently and safely.
 
 ## Features
 
